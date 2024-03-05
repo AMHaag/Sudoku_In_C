@@ -7,10 +7,11 @@ uint16_t char_to_bitmask(char c)
         uint16_t unknown = 0b0000001111111110;
         return unknown; // 0000001111111110
     }
-    int c_int = c - '0';
-    uint16_t mask;
-    mask |= (1 << c_int);
+    uint16_t c_int = c - '0';
+
+    uint16_t mask = 0b0000000000000000;
     mask |= (1 << 0);
+    mask |= (1 << c_int);
     return mask;
 }
 
