@@ -66,6 +66,12 @@ void FillMates(int n, struct HandOff H)
             if(j==Position.y){skip++;}
             H.rmX[j] = H.bX[rowStart+j+skip];
         }
-
+        skip=0;
+        int colStart = Position.y;
+        for(int j = 0;j<9;i++){
+            if(j==Position.x){skip++;}
+            H.cmX[j] = H.bX[colStart+(j*9)+skip];
+        }
+        skip=0;
     }
 }

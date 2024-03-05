@@ -27,8 +27,8 @@ void test(int n)
 int main()
 {
     uint16_t board[82] = {0};
-    convert_input(input, board);
-
+    convert_input(input,board);
+    PrintBin(board[1]);
     for (int i = 1; i < 82; i++)
     {
         if (input[i - 1] == '0')

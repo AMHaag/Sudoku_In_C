@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <stdio.h>
-
+#include <stdlib.h>
+#include "Utilities.h"
 void PrintBin(uint16_t num)
 {
     for (int i = 15; i >= 0; i--)
@@ -26,8 +27,8 @@ void PrintBin(uint16_t num)
 void PrintBinString(uint16_t num)
 {
     uint16_t mask = 0;
-    mask = 1 << 0;
-    if (!num & mask)
+    mask = 1;
+    if ((num & mask) == 0)
     {
         mask = 0;
         int x = 0;
@@ -39,6 +40,7 @@ void PrintBinString(uint16_t num)
             if (num & mask)
             {
                 cands[x] = n;
+                n--;
             }
             else
             {
@@ -47,23 +49,46 @@ void PrintBinString(uint16_t num)
             x++;
         }
         printf("Converted: ");
+
         for (int i = 0; i < 9; i++)
         {
-            if (cands[i] !=)
+            if (cands[i])
+            {
+                printf("%d ", cands[i]);
+            }
         }
+        printf("\n");
+        return;
     }
-    mask = 0;
-    int n = 9;
-    for (int i = 6; i < 15; i++)
+    else
     {
-        mask = 32768 >> i;
-        if (num & mask)
+        mask = 0;
+        int m = 9;
+        for (int i = 6; i < 15; i++)
         {
-            printf("Converted: %d", n);
-        }
-        else
-        {
-            n--;
+            mask = 32768 >> i;
+            if (num & mask)
+            {
+                printf("Converted: %d", m);
+            }
+            else
+            {
+                m--;
+            }
         }
     }
 }
+
+void PrintBoard(char *input, uint16_t *board){
+    for (int i = 1; i < 82; i++)
+    {
+        if (input[i - 1] == '0')
+        {
+            continue;
+        }
+        printf("Input: %c     ", input[i - 1]);
+        PrintBinString(board[i]);
+        PrintBin(board[i]);
+    }
+}
+
