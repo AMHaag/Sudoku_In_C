@@ -15,3 +15,5 @@ uint16_t char_to_bitmask(char c)
     return mask;
 }
 
+
+

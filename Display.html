@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <style>
+    .Cell {
+      border: 1px solid black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 32px;
+      width: 3rem;
+      height: 3rem;
+    }
+    .bold {
+      font-weight: bold;
+    }
+  </style>
+  <body>
+    <label for="input">Input:</label
+    ><input type="text" name="input" id="input" />
+    <label for="state">State:</label
+    ><input type="text" name="state" id="input" />
+    <div
+      class="sudoku-board"
+      style="
+        display: grid;
+        grid-template-rows: repeat(9, 1fr);
+        grid-template-columns: repeat(9, 1fr);
+        border: 4px solid black;
+        gap: 0;
+        width: fit-content;
+      "></div>
+  </body>
+</html>
+<script>
+  let input = document.getElementById('input');
+  let state = document.getElementById('state');
+  for (let i = 0; i < 81; i++) {
+    let cell = document.createElement('div');
+    cell.classList.add('Cell');
+    cell.id = `cell-${i}`;
+    document.querySelector('.sudoku-board').appendChild(cell);
+  }
+
+  function addInput() {
+    clear();
+    for (let i = 0; i < 81; i++) {
+      if (!input.value[i]) {
+        continue;
+      }
+      if (input.value[i] === '0') {
+        continue;
+      }
+      let cell = document.getElementById(`cell-${i}`);
+      cell.innerText = input.value[i];
+      cell.classList.add('bold');
+    }
+  }
+  function clear() {
+    for (let i = 0; i < 81; i++) {
+      let cell = document.getElementById(`cell-${i}`);
+      cell.classList.remove('bold');
+      cell.innerText = '';
+      cell.innerHTML = '';
+    }
+  }
+  function showCandidates() {
+    let candidates = state.value.split(',');
+    for (let i = 0; i < 81; i++) {
+      let cell = document.getElementById(`cell-${i}`);
+      if (!candidates[i].contains('[')) {
+        {
+          cell.innerText = candidates[i];
+        }
+      }
+    }
+  }
+  input.addEventListener('change', addInput);
+  state.addEventListener('change', showCandidates);
+</script>
