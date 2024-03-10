@@ -25,7 +25,6 @@ void test(int n) {
   // printf("Input: %d Row: %d Col: %d Box: %d Zx: %d Zy: %d Zindex: %d\n\n", n,
   //        a.x, a.y, a.z, a.zx, a.zy, a.zindex);
 }
-
 // Main
 int main() {
   uint16_t board[82] = {0};

@@ -19,7 +19,7 @@ void PrintBin(uint16_t num) {
 }
 
 char *PrintBinString(uint16_t num) {
-  char *output = (char *)malloc(19 * sizeof(char));
+  char *output = (char *)malloc(20 * sizeof(char));
   int output_index = 0;
   uint16_t mask = 0;
   mask = 1;
@@ -44,6 +44,10 @@ char *PrintBinString(uint16_t num) {
       if (cands[i]) {
         output[output_index] = cands[i] + '0';
         output_index++;
+        if (cands[i] != 1) {
+          output[output_index] = ',';
+          output_index++;
+        }
       }
     }
     output[output_index] = ']';
@@ -86,9 +90,9 @@ char *CreateFullOutputString(uint16_t *board) {
 void FullState(char *input, uint16_t *board) {
   printf("FullStringOut: \n");
   printf("%s", CreateFullOutputString(board));
-  for (int i = 1; i < 82; i++) {
-    printf("Input: %c     ", input[i - 1]);
-    PrintBinString(board[i]);
-    PrintBin(board[i]);
-  }
+  // for (int i = 1; i < 82; i++) {
+  //   printf("Input: %c     ", input[i - 1]);
+  //   PrintBinString(board[i]);
+  //   PrintBin(board[i]);
+  // }
 }

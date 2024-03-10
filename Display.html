@@ -18,12 +18,29 @@
     .bold {
       font-weight: bold;
     }
+    .candidates {
+      display: grid;
+      grid-template-rows: repeat(3, 1fr);
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      width: 100%;
+      height: 100%;
+    }
+    .candidates > div{
+        border: 1px solid black;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 6px;
+        width: 1rem;
+        height: 1rem;
+    }
   </style>
   <body>
     <label for="input">Input:</label
     ><input type="text" name="input" id="input" />
     <label for="state">State:</label
-    ><input type="text" name="state" id="input" />
+    ><input type="text" name="state" id="state" />
     <div
       class="sudoku-board"
       style="
@@ -73,10 +90,27 @@
     for (let i = 0; i < 81; i++) {
       let cell = document.getElementById(`cell-${i}`);
       if (!candidates[i].contains('[')) {
-        {
-          cell.innerText = candidates[i];
-        }
+        cell.innerText = candidates[i];
       }
+      let candArray = candidates[i].substring(1,-1).split(',')
+      candArray.sort();
+      let candidateDiv = document.createElement('div');
+        candidateDiv.classList.add('candidates');
+        for (let j = 0; j < 9; j++) {
+          let candidate = document.createElement('div');
+            candidate.className.add('candidate');
+            for(let k = 0; k < candArray.length; k++){
+                let candCell = document.createElement('div');
+                candCell.id = `cand-${i}-${k+1}`;
+                candidateDiv.appendChild(candCell);
+            }
+            for(let k = 0; k < candArray.length; k++){
+                let candCell = document.getElementById(`cand-${i}-${candArray[k]}`);
+                candCell.innerText = candArray[k];
+            }
+          candidateDiv.appendChild(candidate);
+        }
+
     }
   }
   input.addEventListener('change', addInput);
