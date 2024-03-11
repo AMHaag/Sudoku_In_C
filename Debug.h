@@ -2,23 +2,28 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-void PrintBin(uint16_t num) {
+char *PrintCellBin(uint16_t num) {
+  char *binaryString = (char *)calloc(20, sizeof(char));
+  int bsIndex = 0;
   for (int i = 15; i >= 0; i--) {
     if ((i + 1) % 4 == 0) {
-      printf(" ");
+      binaryString[bsIndex] = '_';
+      bsIndex++;
     }
     uint16_t mask = 0;
     mask = 1 << i;
     if (num & mask) {
-      printf("1");
+      binaryString[bsIndex] = '1';
+      bsIndex++;
     } else {
-      printf("0");
+      binaryString[bsIndex] = '0';
+      bsIndex++;
     }
   }
-  printf("\n");
+  return binaryString;
 }
 
-char *PrintBinString(uint16_t num) {
+char *PrintCellString(uint16_t num) {
   char *output = (char *)malloc(20 * sizeof(char));
   int output_index = 0;
   uint16_t mask = 0;
@@ -71,7 +76,7 @@ char *CreateFullOutputString(uint16_t *board) {
   memset(output, '\0', 1600);
   int output_index = 0;
   for (int i = 1; i < 82; i++) {
-    char *c = PrintBinString(board[i]);
+    char *c = PrintCellString(board[i]);
     // printf("%d",board[i]);
     for (int j = 0; j < 19; j++) {
       if (c[j] == '\0') {
@@ -92,7 +97,7 @@ void FullState(char *input, uint16_t *board) {
   printf("%s", CreateFullOutputString(board));
   // for (int i = 1; i < 82; i++) {
   //   printf("Input: %c     ", input[i - 1]);
-  //   PrintBinString(board[i]);
-  //   PrintBin(board[i]);
+  //   PrintCellString(board[i]);
+  //   PrintCellBin(board[i]);
   // }
 }
