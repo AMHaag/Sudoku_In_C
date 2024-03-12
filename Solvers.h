@@ -61,34 +61,35 @@ void FillMates(int n, HandOff(*H)) {
   }
   Position Position;
   Position = GetPosition(n);
-  for (int i = 0; i < 8; i++) {
-    int skip = 0;
-    int rowStart = ((Position.x - 1) * 9) + 1;
-    for (int j = 0; j < 8; j++) {
-      if (j == Position.y - 1) {
-        skip++;
-      }
-      H->rmX[j] = H->bX[rowStart + j + skip];
+  //* Row Mates
+  int xskip = 0;
+  int rowStart = ((Position.x - 1) * 9) + 1;
+  for (int j = 0; j < 8; j++) {
+    if (j == Position.y - 1) {
+      xskip++;
     }
-    skip = 0;
-    int colStart = Position.y - 1;
-    for (int j = 0; j < 8; j++) {
-      if (j == Position.x - 1) {
-        skip++;
-      }
-      H->cmX[j] = H->bX[colStart + (j * 9) + skip];
-    }
-    skip = 0;
+    // printf("r %d\n", rowStart + j + xskip);
+    H->rmX[j] = H->bX[rowStart + j + xskip];
   }
-
-  int ost = GetZStart(Position.z);
-  for (int i = 0; i < 8; i++) {
-    int skip = 0;
-    if (i == Position.zindex - 1) {
-      skip++;
+  int yskip = 0;
+  int colStart = Position.y - 1;
+  for (int i = 0; i < 9; i++) {
+    if (i == Position.x - 1) {
+      yskip++;
       continue;
     }
-    H->bxX[i] = H->bX[ost + i + skip];
+    // printf("c %d\n", colStart + (i * 9) + yskip);
+    H->cmX[i] = H->bX[colStart + (i * 9) + yskip];
+  }
+  int ost = GetZStart(Position.z);
+  for (int i = 0; i < 9; i++) {
+    int zskip = 0;
+    if (i == Position.zindex - 1) {
+      zskip++;
+      continue;
+    }
+    // printf("z %d\n", ost + i + zskip);
+    H->bxX[i] = H->bX[ost + i + zskip];
     if ((i + 1) % 3 == 0) {
       ost += 6;
     }
@@ -117,23 +118,29 @@ void FindBasicCandidates(HandOff *H) {
     Position p = GetPosition(i);
     FillMates(i, H);
     PrintPosition(i);
-    PrintMates(H);
-    return;
+    // PrintMates(H);
     uint16_t elimed = 0;
     for (int j = 0; j < 8; j++) {
-      uint16_t r = H->rmX[j] & 1 ? H->rmX[j] : 0;
-      uint16_t c = H->cmX[j] & 1 ? H->cmX[j] : 0;
-      uint16_t b = H->bxX[j] & 1 ? H->bxX[j] : 0;
-      elimed = r | c | b;
-      char *_elimed = PrintCellBin(elimed);
-      printf("Elimed: %s\n", _elimed);
-      elimed--;
+      uint16_t r = H->rmX[j] & 1 ? H->rmX[j] - 1 : 0;
+      uint16_t c = H->cmX[j] & 1 ? H->cmX[j] - 1 : 0;
+      uint16_t b = H->bxX[j] & 1 ? H->bxX[j] - 1 : 0;
+      // printf("R: %s\n", PrintCellBin(r));
+      // printf("C: %s\n", PrintCellBin(c));
+      // printf("Z: %s\n", PrintCellBin(c));
+
+      elimed = elimed | r | c | b;
+      // printf("E: %s\n\n", PrintCellBin(elimed));
     }
+    char *_elimed = PrintCellBin(elimed);
+    // printf("Cell#%d\n", i);
+    // printf("Elimed: %s\n", _elimed);
 
     if (elimed) {
-      //   H->bX[i] &= ~elimed;
-      //   printf("Eliminated %d from cell %d\n", elimed, i);
-      //   (*H->elimX)++;
+      // printf("Before: %s\n", PrintCellBin(H->bX[i]));
+      H->bX[i] &= ~elimed;
+      // printf("After:  %s\n", PrintCellBin(H->bX[i]));
+
+      (*H->elimX)++;
     }
   }
 }

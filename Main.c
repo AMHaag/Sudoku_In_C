@@ -25,13 +25,16 @@ int main() {
   uint16_t board[82] = {0};
   convert_input(input, board);
   HandOff xyz;
+  int solved =0;
+  int elimed = 0;
   xyz.bX = board;
   xyz.rmX = rowMates;
   xyz.cmX = colMates;
   xyz.bxX = boxMates;
-  // FillMates(0, &xyz);
+  xyz.elimX = &elimed;
+  xyz.solvX = &solved;
   FindBasicCandidates(&xyz);
-  // FullState(input, board);
+  FullState(input, board);
   return 0;
 }
 
