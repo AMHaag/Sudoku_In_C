@@ -1,4 +1,5 @@
 #include "Debug.h"
+#include <assert.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -13,6 +14,7 @@ typedef struct {
   uint16_t(*rmX); // The Reusable RowMates Array
   uint16_t(*cmX); // The Reusable ColumnMates Array
   uint16_t(*bxX); // The Reusable BoxMates Array
+  int *unsolvedX; // The number of unknown cells
   int *solvX;     // The number of cells solved
   int *elimX;     // The number of candidates eliminated
   bool *solved;   // The state of the board
@@ -28,7 +30,11 @@ typedef struct {
   int zy;     /** The 'Column' within the box the cell is in */
   int zindex; /** The index number of the cell within the Box*/
 } Position;
-
+typedef struct {
+  uint16_t(*rmG);
+  uint16_t(*cmG);
+  uint16_t(*bxG);
+} Globals;
 /// @brief Returns the Row, Column, Box, and box coordinates of a the input
 /// cell.
 /// @param i The Index you are ascertaining the position of.
@@ -52,9 +58,37 @@ void PrintPosition(int n) {
   printf("Input: %d Row: %d Col: %d Box: %d Zx: %d Zy: %d Zindex: %d\n\n", n,
          pzzz.x, pzzz.y, pzzz.z, pzzz.zx, pzzz.zy, pzzz.zindex);
 }
+bool CellSolveTest(int n) {
+  switch (n) {
+  case 2:
+    return true;
+  case 4:
+    return true;
+  case 8:
+    return true;
+  case 16:
+    return true;
+  case 32:
+    return true;
+  case 64:
+    return true;
+  case 128:
+    return true;
+  case 256:
+    return true;
+  case 512:
+    return true;
+  default:
+    return false;
+  }
+}
+bool IsCellSolved(int n) { return (n & 1) == 1; }
 
 void FillMates(int n, HandOff(*H)) {
   for (int i = 0; i < 8; i++) {
+    if (IsCellSolved(H->bX[i])) {
+      continue;
+    }
     H->rmX[i] = 0;
     H->cmX[i] = 0;
     H->bxX[i] = 0;
@@ -113,11 +147,25 @@ char *PrintMates(HandOff *H) {
   return "fix this shit";
 }
 
-void FindBasicCandidates(HandOff *H) {
+int FindBasicCandidates(HandOff(*H)) {
+  printf("ding");
+  int finds = 0;
   for (int i = 1; i < 82; i++) {
+    if (!H->bX[i] > 0) {
+      printf("Cell#%d is somehow 0", i);
+    };
+    assert(H->bX[i] > 0);
+    if (H->bX[i] & 1) {
+      continue;
+    }
+    if (CellSolveTest(H->bX[i]) == true && H->bX[i] > 0) {
+      H->bX[i] |= 1;
+      finds++;
+      continue;
+    }
     Position p = GetPosition(i);
     FillMates(i, H);
-    PrintPosition(i);
+    // PrintPosition(i);
     // PrintMates(H);
     uint16_t elimed = 0;
     for (int j = 0; j < 8; j++) {
@@ -138,11 +186,13 @@ void FindBasicCandidates(HandOff *H) {
     if (elimed) {
       // printf("Before: %s\n", PrintCellBin(H->bX[i]));
       H->bX[i] &= ~elimed;
-      // printf("After:  %s\n", PrintCellBin(H->bX[i]));
 
-      (*H->elimX)++;
+      finds++;
     }
+    // printf("After:  %s\n", PrintCellBin(H->bX[i]));
   }
+  // printf("done");
+  return finds;
 }
 
 bool CheckStatus(uint16_t cell) {
@@ -164,31 +214,49 @@ int GetZStart(int z) {
   return (x * 3) + (y * 27) + 1;
 }
 
-// int Solve(uint16_t(*puzzle)) {
+int Solve(uint16_t(*board), Globals *globals, int unknown) {
+  // Variables
+  HandOff data;
+  int solved = 0;
+  int elimed = 0;
+  data.bX = board;
+  data.rmX = globals->rmG;
+  data.cmX = globals->cmG;
+  data.bxX = globals->bxG;
+  data.unsolvedX = &unknown;
+  data.elimX = &elimed;
+  data.solvX = &solved;
+  int f = 0;
+  //* Do/While
+  // printf("Iterataions: 0\n");
+  // for (int i = 1; i < 82; i++) {
+  //   printf("Cell: %d %s - %s\n", i, PrintCellBin(data.bX[i]),
+  //          PrintCellString(data.bX[i]));
+  // }
+  do {
+    data.solvX = 0;
+    data.elimX = 0;
+    f = 0;
+    // Part A: Check for Solved or Mistakes
 
-//   // Variables
-//   HandOff myHandOff;
-//   uint16_t board[82];
-//   memcpy(board, puzzle, sizeof(uint16_t) * 82);
-//   int solveCount = 0;
-//   int elimCount = 0;
-//   myHandOff.bX = (&board[82]);
-
-//   myHandOff.solvX = &solveCount;
-//   myHandOff.elimX = &elimCount;
-//   myHandOff.solved = false;
-
-//   //* Do/While
-//   do {
-//     solveCount = 0;
-//     elimCount = 0;
-//     // Part A: Check for Solved or Mistakes
-
-//     // Part B: Solve Cells
-//     SolveCells(myHandOff);
-//     // Part C: Eliminate candidates
-//     FindAdvCandidates(myHandOff);
-//   } while (solveCount + elimCount != 0);
-//   // Part D: Find Best Cell for first Guess
-//   // Part E: Recurse / MultiThread-Guess
-// }
+    // Part B: Solve Cells
+    f = FindBasicCandidates(&data);
+    // Part C: Eliminate candidates
+    // Part D: increment iteration count
+    data.bX[0]++;
+    // printf("Findings:%d", f);
+    printf("Iterataions: %d\n", data.bX[0]);
+    for (int i = 1; i < 82; i++) {
+      printf("Cell: %d %s - %s\n", i, PrintCellBin(data.bX[i]),
+             PrintCellString(data.bX[i]));
+    }
+    printf("\n\n\n");
+    printf("%s\n\n\n", CreateFullOutputString(data.bX));
+    if (data.bX[0] > 50) {
+      break;
+    }
+  } while (f);
+  //   // Part E: Recurse / MultiThread-Guess
+  // FullState(input, board);
+  return 0;
+}

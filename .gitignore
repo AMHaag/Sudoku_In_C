@@ -1,6 +1,6 @@
 test_cases.csv
 .vs/
-./Sudoku_Data_set
+Sudoku_Data_set/
 # Prerequisites
 *.d
 
