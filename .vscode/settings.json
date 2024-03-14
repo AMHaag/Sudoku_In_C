@@ -1,6 +1,6 @@
 {
   "files.associations": {
-    "debug.h": "c"
+    "convert.h": "c"
   },
   "cmake.configureOnOpen": true
 }

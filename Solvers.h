@@ -1,63 +1,11 @@
-#include "Debug.h"
+#include "Convert.h"
 #include <assert.h>
-#include <stdbool.h>
+
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-/**
- * @brief This struct is used to hold the state of the board. It is pertinent
- * only to the function that invokes it.
- */
-typedef struct {
-  uint16_t(*bX);  // The board
-  uint16_t(*rmX); // The Reusable RowMates Array
-  uint16_t(*cmX); // The Reusable ColumnMates Array
-  uint16_t(*bxX); // The Reusable BoxMates Array
-  int *unsolvedX; // The number of unknown cells
-  int *solvX;     // The number of cells solved
-  int *elimX;     // The number of candidates eliminated
-  bool *solved;   // The state of the board
-} HandOff;
-/**
- * @brief  This struct represents the position of a cell in the overall board.
- */
-typedef struct {
-  int x;      /** The Row the cell is in  (1-based)*/
-  int y;      /** The Column the cell is in (1-based)*/
-  int z;      /** The Box the cell is in (1-based)*/
-  int zx;     /** The 'Row' within the box the cell is in */
-  int zy;     /** The 'Column' within the box the cell is in */
-  int zindex; /** The index number of the cell within the Box*/
-} Position;
-typedef struct {
-  uint16_t(*rmG);
-  uint16_t(*cmG);
-  uint16_t(*bxG);
-} Globals;
-/// @brief Returns the Row, Column, Box, and box coordinates of a the input
-/// cell.
-/// @param i The Index you are ascertaining the position of.
-/// @return struct Position
-/// @see Position
-Position GetPosition(int n) {
-  Position out;
-  out.y = (n - 1) % 9 + 1;
-  out.x = (n - 1) / 9 + 1;
-  out.z = 3 * ((out.x - 1) / 3) + ((out.y - 1) / 3) + 1;
-  out.zx = (out.x - 1) % 3;
-  out.zy = (out.y - 1) % 3;
-  out.zindex = 3 * out.zx + out.zy + 1;
-  out.zx++;
-  out.zy++;
-  return out;
-}
-void PrintPosition(int n) {
-  Position pzzz;
-  pzzz = GetPosition(n);
-  printf("Input: %d Row: %d Col: %d Box: %d Zx: %d Zy: %d Zindex: %d\n\n", n,
-         pzzz.x, pzzz.y, pzzz.z, pzzz.zx, pzzz.zy, pzzz.zindex);
-}
+
 bool CellSolveTest(int n) {
   switch (n) {
   case 2:
@@ -83,12 +31,11 @@ bool CellSolveTest(int n) {
   }
 }
 bool IsCellSolved(int n) { return (n & 1) == 1; }
-
 void FillMates(int n, HandOff(*H)) {
-  for (int i = 0; i < 8; i++) {
-    if (IsCellSolved(H->bX[i])) {
-      continue;
+    if (IsCellSolved(H->bX[n])) {
+      return;
     }
+  for (int i = 0; i < 8; i++) {
     H->rmX[i] = 0;
     H->cmX[i] = 0;
     H->bxX[i] = 0;
@@ -102,64 +49,47 @@ void FillMates(int n, HandOff(*H)) {
     if (j == Position.y - 1) {
       xskip++;
     }
-    // printf("r %d\n", rowStart + j + xskip);
     H->rmX[j] = H->bX[rowStart + j + xskip];
   }
+  //* Col Mates
   int yskip = 0;
-  int colStart = Position.y - 1;
-  for (int i = 0; i < 9; i++) {
-    if (i == Position.x - 1) {
+  int colStart = Position.y;
+  for (int i = 1; i < 10; i++) {
+    if (i == Position.x) {
       yskip++;
       continue;
     }
-    // printf("c %d\n", colStart + (i * 9) + yskip);
-    H->cmX[i] = H->bX[colStart + (i * 9) + yskip];
+    int colIdx = colStart + ((i - 1) * 9);
+
+    H->cmX[i - 1] = H->bX[colIdx];
   }
-  int ost = GetZStart(Position.z);
+  //* Box Mates
+  int z = GetZStart(Position.z);
+  int jmp = 0;
+  bool zskip = 0; // 6-1=5
   for (int i = 0; i < 9; i++) {
-    int zskip = 0;
+    if (i % 3 == 0 && i != 0) {
+      jmp += 6;
+    }
+    int n = z + i + jmp;
     if (i == Position.zindex - 1) {
       zskip++;
       continue;
     }
-    // printf("z %d\n", ost + i + zskip);
-    H->bxX[i] = H->bX[ost + i + zskip];
-    if ((i + 1) % 3 == 0) {
-      ost += 6;
-    }
+    H->bxX[i - zskip] = H->bX[n];
   }
 }
-char *PrintMates(HandOff *H) {
-  char rowMates[1600] = {'\0'};
-  char colMates[1600] = {'\0'};
-  char boxMates[1600] = {'\0'};
-  for (int i = 0; i < 8; i++) {
-    char *r = PrintCellString(H->rmX[i]);
-    char *c = PrintCellString(H->cmX[i]);
-    char *b = PrintCellString(H->bxX[i]);
-    strcat(rowMates, r);
-    strcat(colMates, c);
-    strcat(boxMates, b);
-  }
-  printf("RowMates: %s\n", rowMates);
-  printf("ColMates: %s\n", colMates);
-  printf("BoxMates: %s\n", boxMates);
-  return "fix this shit";
-}
-
 int FindBasicCandidates(HandOff(*H)) {
-  printf("ding");
   int finds = 0;
   for (int i = 1; i < 82; i++) {
-    if (!H->bX[i] > 0) {
-      printf("Cell#%d is somehow 0", i);
-    };
-    assert(H->bX[i] > 0);
+    assert(H->bX[i] < 1024);
+    uint16_t cell = H->bX[i];
     if (H->bX[i] & 1) {
       continue;
     }
     if (CellSolveTest(H->bX[i]) == true && H->bX[i] > 0) {
       H->bX[i] |= 1;
+      H->unsolvedX--;
       finds++;
       continue;
     }
@@ -167,18 +97,22 @@ int FindBasicCandidates(HandOff(*H)) {
     FillMates(i, H);
     // PrintPosition(i);
     // PrintMates(H);
+    // PrintSimpleMates(H);
     uint16_t elimed = 0;
     for (int j = 0; j < 8; j++) {
+      // printf("Index: %d\n", j + 1);
       uint16_t r = H->rmX[j] & 1 ? H->rmX[j] - 1 : 0;
       uint16_t c = H->cmX[j] & 1 ? H->cmX[j] - 1 : 0;
       uint16_t b = H->bxX[j] & 1 ? H->bxX[j] - 1 : 0;
       // printf("R: %s\n", PrintCellBin(r));
       // printf("C: %s\n", PrintCellBin(c));
       // printf("Z: %s\n", PrintCellBin(c));
-
+      uint16_t newElims = r | c | b;
+      // printf("n: %s\n\n", PrintCellBin(newElims));
       elimed = elimed | r | c | b;
       // printf("E: %s\n\n", PrintCellBin(elimed));
     }
+
     char *_elimed = PrintCellBin(elimed);
     // printf("Cell#%d\n", i);
     // printf("Elimed: %s\n", _elimed);
@@ -186,15 +120,19 @@ int FindBasicCandidates(HandOff(*H)) {
     if (elimed) {
       // printf("Before: %s\n", PrintCellBin(H->bX[i]));
       H->bX[i] &= ~elimed;
-
-      finds++;
+      if(H->bX[i] != cell){
+          finds++;}
     }
     // printf("After:  %s\n", PrintCellBin(H->bX[i]));
+  if (CellSolveTest(H->bX[i]) == true && H->bX[i] > 0) {
+    H->bX[i] |= 1;
+    H->unsolvedX--;
+    finds++;
+    continue;
   }
-  // printf("done");
+  }
   return finds;
 }
-
 bool CheckStatus(uint16_t cell) {
   if (cell & 1) {
     return true;
@@ -203,7 +141,7 @@ bool CheckStatus(uint16_t cell) {
   }
 }
 
-void SolveCells(HandOff H) {}
+void SolveCells(HandOff H) { 3 - 4; }
 
 void FindAdvCandidates(HandOff H) {}
 
@@ -223,9 +161,7 @@ int Solve(uint16_t(*board), Globals *globals, int unknown) {
   data.rmX = globals->rmG;
   data.cmX = globals->cmG;
   data.bxX = globals->bxG;
-  data.unsolvedX = &unknown;
-  data.elimX = &elimed;
-  data.solvX = &solved;
+  data.unsolvedX = unknown;
   int f = 0;
   //* Do/While
   // printf("Iterataions: 0\n");
@@ -234,8 +170,6 @@ int Solve(uint16_t(*board), Globals *globals, int unknown) {
   //          PrintCellString(data.bX[i]));
   // }
   do {
-    data.solvX = 0;
-    data.elimX = 0;
     f = 0;
     // Part A: Check for Solved or Mistakes
 
@@ -244,16 +178,20 @@ int Solve(uint16_t(*board), Globals *globals, int unknown) {
     // Part C: Eliminate candidates
     // Part D: increment iteration count
     data.bX[0]++;
-    // printf("Findings:%d", f);
-    printf("Iterataions: %d\n", data.bX[0]);
-    for (int i = 1; i < 82; i++) {
-      printf("Cell: %d %s - %s\n", i, PrintCellBin(data.bX[i]),
-             PrintCellString(data.bX[i]));
-    }
-    printf("\n\n\n");
+    printf("Iterataion: %d\n", data.bX[0]);
+    printf("Findings:%d\n", f);
+    // for (int i = 1; i < 82; i++) {
+    //   printf("Cell: %d %s - %s\n", i, PrintCellBin(data.bX[i]),
+    //          PrintCellString(data.bX[i]));
+    // }
     printf("%s\n\n\n", CreateFullOutputString(data.bX));
-    if (data.bX[0] > 50) {
-      break;
+    printf("Unsolved Remainging: %d\n", data.unsolvedX);
+    if(data.unsolvedX == 0) {
+      data.solved = true;
+      return 1;
+    }
+    if(data.bX[0] > 12){
+      return 0;
     }
   } while (f);
   //   // Part E: Recurse / MultiThread-Guess

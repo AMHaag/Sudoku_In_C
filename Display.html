@@ -7,16 +7,22 @@
   </head>
   <style>
     .Cell {
-      border: 1px solid black;
       display: flex;
       justify-content: center;
       align-items: center;
       font-size: 32px;
-      width: 3rem;
-      height: 3rem;
+      width: 3.2rem;
+      height: 3.2rem;
+      border: 2px solid lightblue;
     }
     .bold {
       font-weight: bold;
+    }
+    .red {
+      color: salmon;
+    }
+    .blue {
+      color: blueviolet;
     }
     .candidates {
       display: grid;
@@ -26,14 +32,40 @@
       width: 100%;
       height: 100%;
     }
-    .candidates > div{
-        border: 1px solid black;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 6px;
-        width: 1rem;
-        height: 1rem;
+    .candidates > div {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 14px;
+      width: 1rem;
+      height: 1rem;
+    }
+    label {
+      font-weight: bolder;
+    }
+    .tb {
+      border-top: 2px solid black !important;
+    }
+    .bb {
+      border-bottom: 2px solid black !important;
+    }
+    .lb {
+      border-left: 2px solid black !important;
+    }
+    .rb {
+      border-right: 2px solid black !important;
+    }
+    .tbg {
+      border-top: 1px solid gray;
+    }
+    .bbg {
+      border-bottom: 1px solid gray;
+    }
+    .lbg {
+      border-left: 1px solid gray;
+    }
+    .rbg {
+      border-right: 1px solid gray;
     }
   </style>
   <body>
@@ -41,6 +73,8 @@
     ><input type="text" name="input" id="input" />
     <label for="state">State:</label
     ><input type="text" name="state" id="state" />
+    <label for="answer">Answer:</label
+    ><input type="text" name="answer" id="answer" />
     <div
       class="sudoku-board"
       style="
@@ -51,19 +85,35 @@
         gap: 0;
         width: fit-content;
       "></div>
+    <label for="answer_show">Nothing:</label>
+    <input type="radio" name="show" id="state" />
+    <label for="show">State:</label>
+    <input type="radio" name="show" id="state" checked />
+    <label for="answer_show">Answer:</label>
+    <input type="radio" name="show" id="state" />
   </body>
 </html>
 <script>
   let input = document.getElementById('input');
-  input.value = "070000043040009610800634900094052000358460020000800530080070091902100005007040802"
+  input.value =
+    '001300002079000000020670903000967300750001049080503100040702530205806700107405060';
   let state = document.getElementById('state');
+  state.value = '8,6,1,3,5,9,4,7,2,3,7,9,1,2,4,8,[6.5.],[6.5.],5,2,4,6,7,8,9,1,3,4,1,2,9,6,7,3,[8.5.],[8.5.],7,5,3,2,8,1,6,4,9,9,8,6,5,4,3,1,2,7,6,4,8,7,9,2,5,3,1,2,3,5,8,1,6,7,9,4,1,9,7,4,3,5,2,6,8'
+  let answer = document.getElementById('answer');
+  answer.value =
+    '679518243543729618821634957794352186358461729216897534485276391962183475137945862';
+  let toggle = document.getElementsByName('show');
+  //! Create 81 cells
   for (let i = 0; i < 81; i++) {
     let cell = document.createElement('div');
     cell.classList.add('Cell');
     cell.id = `cell-${i}`;
+    cell.innerText = '';
+    applyCellBorders(i + 1, cell);
     document.querySelector('.sudoku-board').appendChild(cell);
   }
-
+  addInput();
+  showCandidates();
   function addInput() {
     clear();
     for (let i = 0; i < 81; i++) {
@@ -76,44 +126,114 @@
       let cell = document.getElementById(`cell-${i}`);
       cell.innerText = input.value[i];
       cell.classList.add('bold');
+      cell.classList.add('clue');
     }
   }
   function clear() {
     for (let i = 0; i < 81; i++) {
       let cell = document.getElementById(`cell-${i}`);
       cell.classList.remove('bold');
+      cell.classList.remove('red');
       cell.innerText = '';
       cell.innerHTML = '';
+    }
+  }
+  function showAnswer() {
+    let ansArr = answer.value.split('');
+    for (let i = 0; i < 81; i++) {
+      let cell = document.getElementById(`cell-${i}`);
+      if (cell.classList.contains('clue')) {
+        continue;
+      }
+      cell.innerText = '';
+      cell.innerHTML = '';
+      cell.innerText = ansArr[i];
+      cell.classList.add('blue');
     }
   }
   function showCandidates() {
     let candidates = state.value.split(',');
     for (let i = 0; i < 81; i++) {
       let cell = document.getElementById(`cell-${i}`);
-      if (!candidates[i].contains('[')) {
-        cell.innerText = candidates[i];
+      cell.classList.remove('blue');
+      if (cell.classList.contains('clue')) {
+        continue;
       }
-      let candArray = candidates[i].substring(1,-1).split(',')
+      if (!candidates[i].includes('[')) {
+        cell.innerText = '';
+        cell.innerHTML = '';
+        cell.classList.add('red');
+        cell.innerText = candidates[i];
+        continue;
+      }
+      cell.innerText = '';
+      cell.innerHTML = '';
+      let candArray = candidates[i]
+        .substring(1, candidates[i].indexOf(']'))
+        .split('.');
+      console.log(candidates[i]);
+      candArray = candArray.filter((x) => x !== '');
       candArray.sort();
+      console.log(`CELL#${i}  `, 'CA:', candArray);
       let candidateDiv = document.createElement('div');
-        candidateDiv.classList.add('candidates');
-        for (let j = 0; j < 9; j++) {
-          let candidate = document.createElement('div');
-            candidate.className.add('candidate');
-            for(let k = 0; k < candArray.length; k++){
-                let candCell = document.createElement('div');
-                candCell.id = `cand-${i}-${k+1}`;
-                candidateDiv.appendChild(candCell);
-            }
-            for(let k = 0; k < candArray.length; k++){
-                let candCell = document.getElementById(`cand-${i}-${candArray[k]}`);
-                candCell.innerText = candArray[k];
-            }
-          candidateDiv.appendChild(candidate);
+      candidateDiv.classList.add('candidates');
+      for (let j = 0; j < 9; j++) {
+        let candidate = document.createElement('div');
+        candidate.classList.add('candidate');
+      }
+      for (let k = 0; k < 9; k++) {
+        let candCell = document.createElement('div');
+        candCell.id = `cand-${i}-${k + 1}`;
+        if (candArray.includes(`${k + 1}`)) {
+          candCell.innerText = `${k + 1}`;
+        } else {
+          candCell.innerText = ' ';
         }
-
+        applycandidatesBorders(k + 1, candCell);
+        candidateDiv.appendChild(candCell);
+      }
+      // for(let k = 0; k < candArray.length; k++){
+      //     let candCell = document.getElementById(`cand-${i}-${candArray[k]}`);
+      //     candCell.innerText = candArray[k];
+      // }
+      cell.appendChild(candidateDiv);
+    }
+  }
+  function applyCellBorders(n, node) {
+    if (n % 3 === 0) {
+      node.classList.add('rb');
+    }
+    if (n >18 && n < 28) {
+      node.classList.add('bb');
+    }
+    if (n > 45 && n < 55) {
+      node.classList.add('bb');
+    }
+  }
+  function applycandidatesBorders(n, node) {
+    let noLeft = [1, 4, 7];
+    let noRight = [3, 6, 9];
+    let noTop = [1, 2, 3];
+    let noBottom = [7, 8, 9];
+    if (noLeft.includes(n)) {
+      node.classList.add('rbg');
+    }
+    if (noRight.includes(n)) {
+      node.classList.add('lbg');
+    }
+    if (noTop.includes(n)) {
+      node.classList.add('bbg');
+    }
+    if (noBottom.includes(n)) {
+      node.classList.add('tbg');
     }
   }
   input.addEventListener('change', addInput);
   state.addEventListener('change', showCandidates);
+  toggle[0].addEventListener('change', () => {
+    clear();
+    addInput();
+  });
+  toggle[1].addEventListener('change', showCandidates);
+  toggle[2].addEventListener('change', showAnswer);
 </script>
