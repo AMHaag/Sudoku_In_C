@@ -5,8 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-
-bool CellSolveTest(int n) {
+bool CellSolveTest(uint16_t n) {
   switch (n) {
   case 2:
     return true;
@@ -32,9 +31,9 @@ bool CellSolveTest(int n) {
 }
 bool IsCellSolved(int n) { return (n & 1) == 1; }
 void FillMates(int n, HandOff(*H)) {
-    if (IsCellSolved(H->bX[n])) {
-      return;
-    }
+  if (IsCellSolved(H->bX[n])) {
+    return;
+  }
   for (int i = 0; i < 8; i++) {
     H->rmX[i] = 0;
     H->cmX[i] = 0;
@@ -59,7 +58,7 @@ void FillMates(int n, HandOff(*H)) {
       yskip++;
       continue;
     }
-    int colIdx = colStart + ((i - 1) * 9);
+    int colIdx = colStart + ((i - 1 + yskip) * 9);
 
     H->cmX[i - 1] = H->bX[colIdx];
   }
@@ -82,8 +81,9 @@ void FillMates(int n, HandOff(*H)) {
 int FindBasicCandidates(HandOff(*H)) {
   int finds = 0;
   for (int i = 1; i < 82; i++) {
+    assert(H->bX[i] > 0);
     assert(H->bX[i] < 1024);
-    uint16_t cell = H->bX[i];
+    int cell = CellToInt(H->bX[i]);
     if (H->bX[i] & 1) {
       continue;
     }
@@ -95,15 +95,16 @@ int FindBasicCandidates(HandOff(*H)) {
     }
     Position p = GetPosition(i);
     FillMates(i, H);
+    // printf("-------------------------------------------------------------\n");
     // PrintPosition(i);
     // PrintMates(H);
-    // PrintSimpleMates(H);
     uint16_t elimed = 0;
     for (int j = 0; j < 8; j++) {
       // printf("Index: %d\n", j + 1);
       uint16_t r = H->rmX[j] & 1 ? H->rmX[j] - 1 : 0;
       uint16_t c = H->cmX[j] & 1 ? H->cmX[j] - 1 : 0;
       uint16_t b = H->bxX[j] & 1 ? H->bxX[j] - 1 : 0;
+      // printf("=: %s\n", PrintCellBin(H->bX[i]));
       // printf("R: %s\n", PrintCellBin(r));
       // printf("C: %s\n", PrintCellBin(c));
       // printf("Z: %s\n", PrintCellBin(c));
@@ -112,6 +113,7 @@ int FindBasicCandidates(HandOff(*H)) {
       elimed = elimed | r | c | b;
       // printf("E: %s\n\n", PrintCellBin(elimed));
     }
+    // PrintSimpleMates(H);
 
     char *_elimed = PrintCellBin(elimed);
     // printf("Cell#%d\n", i);
@@ -119,26 +121,22 @@ int FindBasicCandidates(HandOff(*H)) {
 
     if (elimed) {
       // printf("Before: %s\n", PrintCellBin(H->bX[i]));
+      // printf("&:      %s\n", PrintCellBin(H->bX[i] & ~elimed));
       H->bX[i] &= ~elimed;
-      if(H->bX[i] != cell){
-          finds++;}
+      // printf("After:  %s\n", PrintCellBin(H->bX[i]));
+      if (CellToInt(H->bX[i]) == cell) {
+        finds++;
+      }
     }
-    // printf("After:  %s\n", PrintCellBin(H->bX[i]));
-  if (CellSolveTest(H->bX[i]) == true && H->bX[i] > 0) {
-    H->bX[i] |= 1;
-    H->unsolvedX--;
-    finds++;
-    continue;
-  }
+    if (CellSolveTest(H->bX[i])&& H->bX[i] > 0) {
+      H->bX[i] |= 1;
+
+      H->unsolvedX--;
+      finds++;
+      continue;
+    }
   }
   return finds;
-}
-bool CheckStatus(uint16_t cell) {
-  if (cell & 1) {
-    return true;
-  } else {
-    return false;
-  }
 }
 
 void SolveCells(HandOff H) { 3 - 4; }
@@ -178,21 +176,24 @@ int Solve(uint16_t(*board), Globals *globals, int unknown) {
     // Part C: Eliminate candidates
     // Part D: increment iteration count
     data.bX[0]++;
-    printf("Iterataion: %d\n", data.bX[0]);
-    printf("Findings:%d\n", f);
-    // for (int i = 1; i < 82; i++) {
-    //   printf("Cell: %d %s - %s\n", i, PrintCellBin(data.bX[i]),
-    //          PrintCellString(data.bX[i]));
-    // }
-    printf("%s\n\n\n", CreateFullOutputString(data.bX));
-    printf("Unsolved Remainging: %d\n", data.unsolvedX);
-    if(data.unsolvedX == 0) {
-      data.solved = true;
-      return 1;
+    // printf("==================================================================="
+    //        "=======\n");
+    // printf("Iterataion: %d\n", data.bX[0]);
+    // printf("Findings:%d\n", f);
+    for (int i = 1; i < 82; i++) {
+      //   printf("Cell: %d %s - %s\n", i, PrintCellBin(data.bX[i]),
+      //          PrintCellString(data.bX[i]));
     }
-    if(data.bX[0] > 12){
+    // printf("%s\n\n\n", CreateFullOutputString(data.bX));
+    // printf("Unsolved Remainging: %d\n", data.unsolvedX);
+    if (data.unsolvedX == 0) {
+      data.solved = true;
+      return data.bX[0];
+    }
+    if (data.bX[0] > 50) {
       return 0;
     }
+
   } while (f);
   //   // Part E: Recurse / MultiThread-Guess
   // FullState(input, board);
