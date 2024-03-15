@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <stdint.h>
+#include <string.h>
 /**
  * @brief This struct is used to hold the state of the board. It is pertinent
  * only to the function that invokes it.
@@ -9,6 +10,7 @@ typedef struct {
   uint16_t(*rmX); // The Reusable RowMates Array
   uint16_t(*cmX); // The Reusable ColumnMates Array
   uint16_t(*bxX); // The Reusable BoxMates Array
+  uint16_t(*naX); // The Reusable NineArray
   int unsolvedX; // The number of unknown cells
   bool solved;   // The state of the board
 } HandOff;
@@ -29,6 +31,7 @@ typedef struct {
   uint16_t(*rmG);
   uint16_t(*cmG);
   uint16_t(*bxG);
+  uint16_t(*naG);
 } Globals;
 /// @brief Returns the Row, Column, Box, and box coordinates of a the input
 /// cell.

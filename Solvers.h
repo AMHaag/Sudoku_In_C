@@ -30,6 +30,25 @@ bool CellSolveTest(uint16_t n) {
   }
 }
 bool IsCellSolved(int n) { return (n & 1) == 1; }
+int *FindDuplicates(uint16_t arr[]) {
+  uint16_t out[9] = {0};
+  for (int i = 0; i < 9; i++) {
+    if(IsCellSolved(arr[i])){
+      continue;
+    }
+    uint16_t duplicates = 0;
+    for (int j = 0; j < 9; j++) {
+      if (i != j && arr[i] == arr[j]) {
+        duplicates++;
+      }
+    }
+    printf("Index %d has %d duplicate(s)\n", i, duplicates);
+    out[i] = duplicates;
+  }
+
+  return out;
+}
+
 void FillMates(int n, HandOff(*H)) {
   if (IsCellSolved(H->bX[n])) {
     return;
@@ -138,8 +157,14 @@ int FindBasicCandidates(HandOff(*H)) {
   }
   return finds;
 }
-
-void SolveCells(HandOff H) { 3 - 4; }
+int FindNakedPartners(HandOff (*H)){
+  memset(H->naX, 0, 9 * sizeof(uint16_t));
+  for(int i=1; i<10;i++){
+    //TODO Set naX to row, col or box
+    //TODO Check if naX has and 1/2 duplicate groups
+    //TODO Use Bwise Ops to remove the Partnered Candidates from the other cells 
+  }
+}
 
 void FindAdvCandidates(HandOff H) {}
 
@@ -159,6 +184,7 @@ int Solve(uint16_t(*board), Globals *globals, int unknown) {
   data.rmX = globals->rmG;
   data.cmX = globals->cmG;
   data.bxX = globals->bxG;
+  data.naX = globals->naG;
   data.unsolvedX = unknown;
   int f = 0;
   //* Do/While

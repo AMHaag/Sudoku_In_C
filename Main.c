@@ -90,9 +90,11 @@ int main(int argc, char *argv[]) {
 #pragma region Batch Loop
   long canSolve = 0;
   long notSolve = 0;
+  int most=0;
+  int least=1000;
   char *batch = read_file("./Sudoku_Data_Set/test_batch_1.txt");
   // printf("%zd",strlen(batch));
-  for (long i = 0; i < 500000; i++) {
+  for (long i = 0; i < 1000000; i++) {
     for (long j = 0; j < 81; j++) {
       if (batch[i * 81 + j+i] == '\n') {
         batch[i * 81 + j+i] = '*';
@@ -114,6 +116,10 @@ int main(int argc, char *argv[]) {
   G.cmG = colMates;
   int x = Solve(board, &G, unknowns);
   // FullState(input, board);
+  if(x>0){
+    most<x?most=x:most;
+    least>x?least=x:least;
+  }
   if (x) {
     // printf("Solved in: %d\n",x);
     canSolve++;
@@ -122,6 +128,8 @@ int main(int argc, char *argv[]) {
     notSolve++;
   }
 }
+printf("Most: %d\n",most);
+printf("Least: %d\n",least);
 printf("Can Solve: %ld\n",canSolve);
 printf("Not Solve: %ld\n",notSolve);
 double percent = (double)canSolve/(double)(canSolve+notSolve);
