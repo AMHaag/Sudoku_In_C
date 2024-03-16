@@ -1,9 +1,21 @@
-#include "Utilities.h"
 #include "Containers.h"
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-char *PrintCellBin(uint16_t num) {
+#include <string.h>
+Cell char_to_bitmask(char c) {
+  if (c == '0') {
+    uint16_t unknown = 0b0000001111111110;
+    return unknown; // 0000001111111110
+  }
+  uint16_t c_int = c - '0';
+
+  uint16_t mask = 0b0000000000000000;
+  mask |= (1 << 0);
+  mask |= (1 << c_int);
+  return mask;
+}
+char *PrintCellBin(Cell num) {
   char *binaryString = (char *)calloc(20, sizeof(char));
   int bsIndex = 0;
   for (int i = 15; i >= 0; i--) {
@@ -23,8 +35,7 @@ char *PrintCellBin(uint16_t num) {
   }
   return binaryString;
 }
-
-char *PrintCellString(uint16_t num) {
+char *PrintCellString(Cell num) {
   char *output = (char *)calloc(20, sizeof(char));
   int output_index = 0;
   uint16_t mask = 0;
@@ -71,8 +82,7 @@ char *PrintCellString(uint16_t num) {
   }
   return output;
 }
-
-char *CreateFullOutputString(uint16_t *board) {
+char *CreateFullOutputString(Cell *board) {
   char *output = (char *)malloc(1600 * sizeof(char));
   memset(output, '\0', 1600);
   int output_index = 0;
@@ -94,7 +104,7 @@ char *CreateFullOutputString(uint16_t *board) {
   output[output_index] = '\0';
   return output;
 }
-int CellToInt(uint16_t cell) {
+int CellToInt(Cell cell) {
   int n = cell-1;
   switch (n) {
   case 2:
@@ -128,7 +138,6 @@ void FullState(char *input, uint16_t *board) {
   //   PrintCellBin(board[i]);
   // }
 }
-
 void PrintPosition(int n) {
   Position pzzz;
   pzzz = GetPosition(n);
@@ -136,7 +145,6 @@ void PrintPosition(int n) {
       "Input: %d Row(x): %d Col(y): %d Box(z): %d Zx: %d Zy: %d Zindex: %d\n",
       n, pzzz.x, pzzz.y, pzzz.z, pzzz.zx, pzzz.zy, pzzz.zindex);
 }
-
 void changeLastChar(char *str, char newChar) {
   int length = strlen(str);
   if (length > 0) {
@@ -166,7 +174,6 @@ void PrintSimpleMates(HandOff *H) {
   printf("ColMates: %s\n", colMates);
   printf("BoxMates: %s\n", boxMates);
 }
-
 void PrintMates(HandOff *H) {
   char rowMates[1600] = {'\0'};
   char colMates[1600] = {'\0'};
@@ -186,3 +193,66 @@ void PrintMates(HandOff *H) {
   printf("ColMates: %s\n", colMates);
   printf("BoxMates: %s\n", boxMates);
 }
+int convert_input(char *input, uint16_t *board) {
+  int k = 0;
+  for (int i = 1; i < 82; i++) {
+    if (input[i - 1] == '0') {
+      k++;
+    }
+    board[i] = char_to_bitmask(input[i - 1]);
+  }
+  return k;
+}
+char *read_file(const char *filename) {
+  FILE *file = fopen(filename, "r");
+  if (file == NULL) {
+    printf("Failed to open the file.\n");
+    return NULL;
+  }
+
+  fseek(file, 0, SEEK_END);
+  long file_size = ftell(file);
+  rewind(file);
+
+  char *buffer = (char *)malloc(file_size + 1);
+  if (buffer == NULL) {
+    printf("Failed to allocate memory.\n");
+    fclose(file);
+    return NULL;
+  }
+
+  size_t bytes_read = fread(buffer, sizeof(char), file_size, file);
+  if (bytes_read != file_size) {
+    printf("Failed to read the file.\n");
+    free(buffer);
+    fclose(file);
+    return NULL;
+  }
+
+  buffer[file_size] = '\0'; // Add null terminator
+
+  fclose(file);
+  return buffer;
+}
+void UnitForEach(Unit *unit, void (*f)(uint16_t *)) {
+  for (int i = 0; i < 9; i++) {
+    f(&(*unit)[i]);
+  }
+}
+void BoardForEach(Board *board, void (*f)(uint16_t *)) {
+  for (int i = 1; i < 82; i++) {
+    f(&(*board)[i]);
+  }
+}
+void PrintInt(uint16_t *n) { printf("%d", *n); }
+
+
+
+
+
+
+
+
+
+
+//end

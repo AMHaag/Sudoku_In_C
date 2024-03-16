@@ -1,6 +1,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <string.h>
+
+typedef uint16_t Cell; // A cell on the board [16 Bit Mask]
+typedef uint16_t Mates[8]; // The mates of a cell [8]
+typedef uint16_t Unit[9]; // A row, column, or box [9]
+typedef uint16_t Board[82];
+typedef int Index; //One of the cells on the board, numbered 1-81
+typedef int Box; //One of the boxes on the board, numbered 1-9
+typedef int Row; //One of the rows on the board, numbered 1-9
+typedef int Col; //One of the columns on the board, numbered 1-9
+
 /**
  * @brief This struct is used to hold the state of the board. It is pertinent
  * only to the function that invokes it.
@@ -10,7 +20,8 @@ typedef struct {
   uint16_t(*rmX); // The Reusable RowMates Array
   uint16_t(*cmX); // The Reusable ColumnMates Array
   uint16_t(*bxX); // The Reusable BoxMates Array
-  uint16_t(*naX); // The Reusable NineArray
+  uint16_t(*naX); // Reusable NineArray A
+  uint16_t(*nbX); // Reusable NineArray B
   int unsolvedX; // The number of unknown cells
   bool solved;   // The state of the board
 } HandOff;
@@ -32,6 +43,7 @@ typedef struct {
   uint16_t(*cmG);
   uint16_t(*bxG);
   uint16_t(*naG);
+  uint16_t(*nbG);
 } Globals;
 /// @brief Returns the Row, Column, Box, and box coordinates of a the input
 /// cell.
