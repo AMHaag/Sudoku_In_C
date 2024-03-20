@@ -22,6 +22,7 @@ typedef struct {
   uint16_t(*bxX); // The Reusable BoxMates Array
   uint16_t(*naX); // Reusable NineArray A
   uint16_t(*nbX); // Reusable NineArray B
+  int(*ncX); // Reusable NineArray C
   int unsolvedX; // The number of unknown cells
   bool solved;   // The state of the board
 } HandOff;
@@ -44,6 +45,7 @@ typedef struct {
   uint16_t(*bxG);
   uint16_t(*naG);
   uint16_t(*nbG);
+  int(*ncG);
 } Globals;
 /// @brief Returns the Row, Column, Box, and box coordinates of a the input
 /// cell.

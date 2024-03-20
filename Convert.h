@@ -15,7 +15,7 @@ Cell char_to_bitmask(char c) {
   mask |= (1 << c_int);
   return mask;
 }
-char *PrintCellBin(Cell num) {
+char *PrintCellBin(Cell num, bool display) {
   char *binaryString = (char *)calloc(20, sizeof(char));
   int bsIndex = 0;
   for (int i = 15; i >= 0; i--) {
@@ -33,9 +33,12 @@ char *PrintCellBin(Cell num) {
       bsIndex++;
     }
   }
+  if(display){
+    printf("%s\n", binaryString);
+  }
   return binaryString;
 }
-char *PrintCellString(Cell num) {
+char *PrintCellString(Cell num, bool display) {
   char *output = (char *)calloc(20, sizeof(char));
   int output_index = 0;
   uint16_t mask = 0;
@@ -80,14 +83,17 @@ char *PrintCellString(Cell num) {
       }
     }
   }
+  if(display){
+    printf("%s\n", output);
+  }
   return output;
 }
-char *CreateFullOutputString(Cell *board) {
+char *CreateFullOutputString(Cell *board, bool display) {
   char *output = (char *)malloc(1600 * sizeof(char));
   memset(output, '\0', 1600);
   int output_index = 0;
   for (int i = 1; i < 82; i++) {
-    char *c = PrintCellString(board[i]);
+    char *c = PrintCellString(board[i],false);
     // printf("%d",board[i]);
     for (int j = 0; j < 19; j++) {
       if (c[j] == '\0') {
@@ -102,6 +108,9 @@ char *CreateFullOutputString(Cell *board) {
   // printf("%s", output);
   output_index--;
   output[output_index] = '\0';
+  if(display){
+    printf("%s\n", output);
+  }
   return output;
 }
 int CellToInt(Cell cell) {
@@ -131,7 +140,7 @@ int CellToInt(Cell cell) {
 }
 void FullState(char *input, uint16_t *board) {
   printf("FullStringOut: \n");
-  printf("%s", CreateFullOutputString(board));
+  printf("%s", CreateFullOutputString(board,false));
   // for (int i = 1; i < 82; i++) {
   //   printf("Input: %c     ", input[i - 1]);
   //   PrintCellString(board[i]);
@@ -179,9 +188,9 @@ void PrintMates(HandOff *H) {
   char colMates[1600] = {'\0'};
   char boxMates[1600] = {'\0'};
   for (int i = 0; i < 8; i++) {
-    char *r = PrintCellString(H->rmX[i]);
-    char *c = PrintCellString(H->cmX[i]);
-    char *b = PrintCellString(H->bxX[i]);
+    char *r = PrintCellString(H->rmX[i],false);
+    char *c = PrintCellString(H->cmX[i],false);
+    char *b = PrintCellString(H->bxX[i],false);
     strcat(r, ",");
     strcat(c, ",");
     strcat(b, ",");
@@ -193,7 +202,7 @@ void PrintMates(HandOff *H) {
   printf("ColMates: %s\n", colMates);
   printf("BoxMates: %s\n", boxMates);
 }
-int convert_input(char *input, uint16_t *board) {
+int convert_input(char *input, Board board) {
   int k = 0;
   for (int i = 1; i < 82; i++) {
     if (input[i - 1] == '0') {
@@ -245,6 +254,61 @@ void BoardForEach(Board *board, void (*f)(uint16_t *)) {
   }
 }
 void PrintInt(uint16_t *n) { printf("%d", *n); }
+void PrintnaXToString(HandOff *H) {
+  printf("naX: ");
+  char c[1600] = {'\0'};
+  for (int i = 0; i < 9; i++) {
+    char *r = PrintCellString(H->naX[i],false);
+    strcat(c, r);
+    strcat(c, ",");
+  }
+  printf("%s", c);
+}
+void PrintnbXToString(HandOff *H) {
+  printf("nbX: ");
+  char c[1600] = {'\0'};
+  for (int i = 0; i < 9; i++) {
+    char *r = PrintCellString(H->nbX[i],false);
+    strcat(c, r);
+    strcat(c, ",");
+  }
+  printf("%s", c);
+}
+void PrintncXToString(HandOff *H) {
+  printf("ncX: ");
+  char c[1600] = {'\0'};
+  for (int i = 0; i < 9; i++) {
+    char *r = PrintCellString(H->ncX[i],false);
+    strcat(c, r);
+    strcat(c, ",");
+  }
+  printf("%s", c);
+  free(c);
+}
+void PrintnaXToInt(HandOff *H) {
+  printf("naX: ");
+  for (int i = 0; i < 9; i++) {
+    printf("%d,", CellToInt(H->naX[i]));
+  }
+  printf("\n");
+}
+void PrintnbXToInt(HandOff *H) {
+  printf("nbX: ");
+  for (int i = 0; i < 9; i++) {
+    printf("%d,", CellToInt(H->nbX[i]));
+  }
+  printf("\n");
+}
+void PrintncXToInt(HandOff *H) {
+  printf("ncX: ");
+  for (int i = 0; i < 9; i++) {
+    printf("%d,", H->ncX[i]);
+  }
+  printf("\n");
+}
+void BR(){
+  printf("\n");
+}
 
 
 

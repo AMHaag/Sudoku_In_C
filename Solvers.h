@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#pragma region Helper Funcs
 bool CellIsSolvable(Cell n) {
   switch (n) {
   case 2:
@@ -37,24 +38,58 @@ int GetZStart(Box z) {
   int y = n / 3;
   return (x * 3) + (y * 27) + 1;
 }
+/// @brief Writes to naX the 9 cells of the row and the index of each cell to
+/// ncX
+/// @param n Row Number
+/// @param H HandOff Struct
 void GetRow(Row n, HandOff(*H)) {
+  memset(H->naX, 0, 9 * sizeof(uint16_t));
+  memset(H->ncX, 0, 9 * sizeof(int));
+  int rs = (n - 1) * 9 + 1;
+
   for (int i = 0; i < 9; i++) {
-    H->naX[i] = H->bX[n + i];
+    H->naX[i] = H->bX[rs + i];
+    H->ncX[i] = (rs + i);
+    if (H->ncX[i] > 81) {
+      printf("Get Row Error: %d\n", H->ncX[i]);
+    }
   }
 }
-void GetCol(Col n, Board board, Unit dest) {
+/// @brief Writes to naX the 9 cells of the column and the index of each cell to
+/// ncX
+/// @param n Column Number
+/// @param H handOff Struct
+void GetCol(Col n, HandOff(*H)) {
+  memset(H->naX, 0, 9 * sizeof(uint16_t));
+  memset(H->ncX, 0, 9 * sizeof(int));
   for (int i = 0; i < 9; i++) {
-    dest[i] = board[n + (i * 9)];
+    H->naX[i] = H->bX[n + (i * 9)];
+    H->ncX[i] = (n + (i * 9));
+    if (H->ncX[i] > 81) {
+      printf("Get Col Error: %d\n", H->ncX[i]);
+    }
   }
 }
-void GetBox(Box n, Board board, Unit dest) {
+/// @brief Writes to naX the 9 cells of the box and the index of each cell to
+/// ncX
+/// @param n
+/// @param board
+/// @param dest
+void GetBox(Box n, HandOff(*H)) {
+  memset(H->naX, 0, 9 * sizeof(uint16_t));
+  memset(H->ncX, 0, 9 * sizeof(int));
   int z = GetZStart(n);
   int jmp = 0;
   for (int i = 0; i < 9; i++) {
     if (i % 3 == 0 && i != 0) {
       jmp += 6;
     }
-    dest[i] = board[z + i + jmp];
+    H->naX[i] = H->bX[z + i + jmp];
+    H->ncX[i] = z + i + jmp;
+    if (H->ncX[i] > 81) {
+      printf("Get Col Error: %d\n", H->ncX[i]);
+      assert(false);
+    }
   }
 }
 void FindDuplicates(HandOff(*H)) {
@@ -96,13 +131,13 @@ bool FindUsableDuplicates(HandOff(*H)) {
     }
     int count = CountCandidates(H->naX[i]);
     if (CountCandidates(H->naX[i]) == H->nbX[i] - 1) {
-      // printf("Index %d has %d usable duplicate(s)\n Count: %d Candidates: %s "
-      //        "\n Row: ",
-      //        i, H->nbX[i], count, PrintCellString(H->naX[i]));
-      // for (int j = 0; j < 9; j++) {
-      //   printf("%s,", PrintCellString(H->naX[j]));
-      // }
-      // printf("\n");
+      printf("Index %d has %d usable duplicate(s)\n Count: %d Candidates: %s "
+             "\n Row: ",
+             i, H->nbX[i], count, PrintCellString(H->naX[i],false));
+      for (int j = 0; j < 9; j++) {
+        printf("%s,", PrintCellString(H->naX[j],false));
+      }
+      printf("\n");
       result = true;
     } else {
       H->nbX[i] = 0;
@@ -158,6 +193,58 @@ void FillMates(int n, HandOff(*H)) {
     H->bxX[i - zskip] = H->bX[n];
   }
 }
+#pragma endregion
+int AnswerCellFromGroupCandidates(HandOff(*H)) {
+  int solves = 0;
+  memset(H->nbX, 0, 9 * sizeof(uint16_t));
+  for (int i = 0; i < 9; i++) {
+    // if the cell is solved mark that number as solved
+
+    if (H->naX[i] & 1) {
+      H->nbX[CellToInt(H->naX[i]) - 1] = 8192;
+      continue;
+    }
+    for (int j = 1; j < 10; j++) {
+      // if numeral is solved skip
+      if (H->nbX[j - 1] > 83) {
+        continue;
+      }
+      // if Ax could be numeral j
+      if (H->naX[i] & (1 << j)) {
+        // if this is the first time we've seen this numeral set nbX to the
+        // index of naX
+        if (H->nbX[j - 1] == 0) {
+          H->nbX[j - 1] = H->ncX[i-1];
+          continue;
+        }
+        // if we've seen this numeral before set nbX to 8192 to ignore it in
+        // future loops
+        if (H->nbX[j - 1] < 83) {
+          H->nbX[j - 1] = 8192;
+          continue;
+        }
+      }
+    }
+  }
+  PrintnaXToInt(H);
+  PrintnbXToInt(H);
+  PrintncXToInt(H);
+  for (int i = 1; i < 10; i++) {
+    if (H->nbX[i-1] > 0 && H->nbX[i-1] < 83) {
+      uint16_t temp = 0;
+      temp = 2 ^ (i + 2);
+      PrintCellBin(H->nbX[i-1],true);
+      printf("%d Index# %d solved, Answer is %d\n",i, H->ncX[i-1],
+             CellToInt(temp + 1));
+
+             getchar();
+      H->bX[H->nbX[i-1]] = temp + 1;
+      solves++;
+      H->unsolvedX--;
+    }
+  }
+  return solves;
+}
 int FindBasicCandidates(HandOff(*H)) {
   int finds = 0;
   for (int i = 1; i < 82; i++) {
@@ -189,14 +276,12 @@ int FindBasicCandidates(HandOff(*H)) {
       // printf("R: %s\n", PrintCellBin(r));
       // printf("C: %s\n", PrintCellBin(c));
       // printf("Z: %s\n", PrintCellBin(c));
-      // uint16_t newElims = r | c | b;
+      uint16_t newElims = r | c | b;
       // printf("n: %s\n\n", PrintCellBin(newElims));
       elimed = elimed | r | c | b;
       // printf("E: %s\n\n", PrintCellBin(elimed));
     }
     // PrintSimpleMates(H);
-
-    // printf("Elimed: %s\n", _elimed);
     bool findAdded = false;
     if (elimed) {
       // printf("Before: %s\n", PrintCellBin(H->bX[i]));
@@ -211,7 +296,8 @@ int FindBasicCandidates(HandOff(*H)) {
     if (CellIsSolvable(H->bX[i]) == true && H->bX[i] > 0) {
       H->bX[i] |= 1;
       H->unsolvedX--;
-      // printf("Index# %d solved, Answer is %d == POSTFIND %d Unknowns Remain\n",
+      // printf("Index# %d solved, Answer is %d == POSTFIND %d Unknowns
+      // Remain\n",
       //        i, CellToInt(H->bX[i]), H->unsolvedX);
       if (!findAdded) {
         finds++;
@@ -221,27 +307,82 @@ int FindBasicCandidates(HandOff(*H)) {
   }
   return finds;
 }
-int FindNakedPartners(HandOff(*H)) {
-  memset(H->naX, 0, 9 * sizeof(uint16_t));
+int IterateGroups(HandOff(*H)) {
+  int ig_finds = 0;
+  uint16_t eliminated = 0;
+  uint16_t temp = 0;
+  memset(H->nbX, 0, 9 * sizeof(uint16_t));
+  memset(H->ncX, 0, 9 * sizeof(int));
   for (int i = 1; i < 10; i++) {
-    // TODO Set naX to row, col or box
     GetRow(i, H);
-    // bool a = FindUsableDuplicates(&H->naX, &H->nbX);
-    bool a = FindUsableDuplicates(H);
-
-    // if (a) {
-    //   // printf("Row %d has usable duplicates\n", i);
-    // }
-
-    // TODO Check if naX has and 1/2 duplicate groups
-    // TODO Use Bwise Ops to remove the Partnered Candidates from the other
-    // cells
+    eliminated = 0;
+    for (int j = 0; j < 9; j++) {
+      if (IsCellSolved((H->naX[j]))) {
+        eliminated |= (H->naX[j] - 1);
+      }
+    }
+    for (int j = 0; j < 9; j++) {
+      if (!IsCellSolved(H->naX[j])) {
+        temp = H->bX[H->ncX[j]];
+        H->bX[H->ncX[j]] &= ~eliminated;
+        if (temp != H->bX[H->ncX[j]]) {
+          ig_finds++;
+          if (CellIsSolvable(H->bX[i]) == true && H->bX[i] > 0) {
+            H->bX[i] |= 1;
+            H->unsolvedX--;
+          }
+        }
+      }
+    }
+    ig_finds += AnswerCellFromGroupCandidates(H);
+    GetCol(i, H);
+    eliminated = 0;
+    temp = 0;
+    for (int j = 0; j < 9; j++) {
+      if (IsCellSolved((H->naX[j]))) {
+        eliminated |= (H->naX[j] - 1);
+      }
+    }
+    for (int j = 0; j < 9; j++) {
+      if (!IsCellSolved((H->naX[j]))) {
+        temp = H->bX[H->ncX[j]];
+        H->bX[H->ncX[j]] &= ~eliminated;
+        if (temp != H->bX[H->ncX[j]]) {
+          ig_finds++;
+          if (CellIsSolvable(H->bX[i]) == true && H->bX[i] > 0) {
+            H->bX[i] |= 1;
+            H->unsolvedX--;
+          }
+        }
+      }
+    }
+    ig_finds += AnswerCellFromGroupCandidates(H);
+    GetBox(i, H);
+    eliminated = 0;
+    temp = 0;
+    for (int j = 0; j < 9; j++) {
+      if (IsCellSolved((H->naX[j]))) {
+        eliminated |= (H->naX[j] - 1);
+      }
+    }
+    for (int j = 0; j < 9; j++) {
+      if (!IsCellSolved((H->naX[j]))) {
+        temp = H->bX[H->ncX[j]];
+        H->bX[H->ncX[j]] &= ~eliminated;
+        if (temp != H->bX[H->ncX[j]]) {
+          ig_finds++;
+          if (CellIsSolvable(H->bX[i]) == true && H->bX[i] > 0) {
+            H->bX[i] |= 1;
+            H->unsolvedX--;
+          }
+        }
+      }
+    }
+    ig_finds += AnswerCellFromGroupCandidates(H);
   }
-  return 0;
+  return ig_finds;
 }
-void FindAdvCandidates(HandOff H) {}
-
-int Solve(uint16_t(*board), Globals *globals, int unknown) {
+int Solve(Board board, Globals *globals, int unknown) {
   // Variables
   HandOff data;
   int solved = 0;
@@ -252,6 +393,7 @@ int Solve(uint16_t(*board), Globals *globals, int unknown) {
   data.bxX = globals->bxG;
   data.naX = globals->naG;
   data.nbX = globals->nbG;
+  data.ncX = globals->ncG;
   data.unsolvedX = unknown;
   // printf("Unknowns: %d\n", data.unsolvedX);
   int finds = 0;
@@ -264,22 +406,27 @@ int Solve(uint16_t(*board), Globals *globals, int unknown) {
   do {
     // printf("%d\n", finds);
     // Part A: Check for Solved or Mistakes
-
     // Part B: Solve Cells
     finds = FindBasicCandidates(&data);
+    // printf("Finds: %d\n", finds);
+    if (finds == 0) {
+      finds = IterateGroups(&data);
+    }
+    // printf("Finds: %d\n", finds);
+    // getchar();
     // FindNakedPartners(&data);
     // Part C: Eliminate candidates
     // Part D: increment iteration count
     data.bX[0]++;
     // printf("==================================================================="
     //        "=======\n");
-    // printf("Iterataion: %d\n", data.bX[0]);
-    // printf("Findings:%d\n", f);
+    printf("Iterataion: %d\n", data.bX[0]);
+    // printf("Findings:%d\n", finds);
     // for (int i = 1; i < 82; i++) {
     //   printf("Cell: %d %s - %s\n", i, PrintCellBin(data.bX[i]),
     //          PrintCellString(data.bX[i]));
     // }
-    // printf("%s\n\n\n", CreateFullOutputString(data.bX));
+    printf("%s\n\n\n", CreateFullOutputString(data.bX,false));
     // printf("~Unsolved Remainging: %d\n", data.unsolvedX);
     if (data.unsolvedX == 0) {
       data.solved = true;
@@ -296,5 +443,5 @@ int Solve(uint16_t(*board), Globals *globals, int unknown) {
   } while (finds > 0);
   // printf("dong");
   // FullState(input, board);
-  return data.bX[0]*-1;
+  return data.bX[0] * -1;
 }

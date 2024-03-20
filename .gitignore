@@ -1,5 +1,6 @@
 test_cases.csv
 .vs/
+.vscode/
 Sudoku_Data_set/
 # Prerequisites
 *.d
